@@ -18,12 +18,14 @@ class Main:
         self.keys = None # Changed when key presses are recorded for afk playback
         
         windows = [w.window_text() for w in Desktop(backend="uia").windows()] # active windows (static)
-        listBox = Listbox(self.root, width=40, font=self.font_style) # Create listbox to allow user to select app
+        self.appList = Listbox(self.root, width=40, font=self.font_style) # Create listbox to allow user to select app
         # Loop through applications and insert at bottom of listbox
         for window in windows:
-            if window not in app_exclusion:
-                listBox.insert(-1, window)
-        listBox.pack() # Place listbox in root window
+            if window not in app_exclusion and window != self.root.title():
+                self.appList.insert(-1, window)
+        self.appList.pack() # Place listbox in root window
+
+        Button(self.root, text="REFRESH LIST", command=self.updateAppsList).pack()
 
         # Create basic structure here
         # e.g. Get apps button, select app,
@@ -31,6 +33,20 @@ class Main:
     
     def start(self):
         self.root.mainloop()
+
+    def updateAppsList(self):
+        global app_exclusion
+
+        self.appList.delete('0', 'end') # Clear list
+
+        # Update list with new windoes
+        windows = [w.window_text() for w in Desktop(backend="uia").windows()] 
+        for window in windows:
+            if window not in app_exclusion and window != self.root.title():
+                self.appList.insert(-1, window)
+
+        # Scroll to top of list, forces update to listbox display
+        self.appList.yview_moveto(0)
 
     def getForegroundWindow(self):
         hWnd = windll.user32.GetForegroundWindow()
@@ -81,5 +97,6 @@ class Main:
 #             sleep(1.5)
 
 if __name__ == "__main__":
+
     app = Main()
     app.start()
