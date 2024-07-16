@@ -90,11 +90,31 @@ class Main:
 
     # Record keypresses until end signal and process
     def record(self):
-        messagebox.showinfo( "Hello User", "Currently, recording hasn't been implemented")
+        # messagebox.showinfo( "Hello User", "Currently, recording hasn't been implemented")
+        info_window = Toplevel()
+        info_window.resizable(False, False)
+        info_window.protocol("WM_DELETE_WINDOW", self._disableEvent)
+
+        # Label to inform user that keyboard is being recorded
+        Label(info_window, text="You are currently recording your keyboard for playback.\nClick the button below to stop.").grid(sticky=N+E+S+W, pady=10, padx=10)
+
+        # Place button to stop recording keypresses here
+        Button(info_window, text="Stop Recording", command=self._stopRecording).grid(sticky=N+E+S+W, pady=10, padx=10)
+        
+        # start recording here:
+        ##
+    
+    # internal method to stop recording keypresses
+    def _stopRecording(self):
+        pass
 
     # Clear recorded keypresses and relevant widgets
     def clearKeys(self):
         messagebox.showinfo( "Hello User", "Currently, clearing recordings hasn't been implemented")
+    
+    # Disables close window button
+    def _disableEvent(self):
+        pass
 
     # Get the active window, intended to use to auto-pause afk when not on selected application
     def getForegroundWindow(self):
