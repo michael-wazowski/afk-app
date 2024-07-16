@@ -9,23 +9,32 @@ app_exclusion = ["", "Taskbar", "Program Manager"]
 
 class Main:
     def __init__(self):
+        # Initialising and setting up root window
         self.root = Tk()
-        self.root.geometry("600x600")
-        self.font_style = ("Times New Roman", "11")
+        self.root.geometry("720x600")
+        self.root.resizable(False, False)
+        self.root.title("AFK App")
+
+        # Font styles
+        self.font_container = ("Times New Roman", "11")
+        self.font_heading = ("Helvetica", "12", "bold")
 
         self.afk = False # Controlled by afk start/stop button
         self.keys = None # Changed when key presses are recorded for afk playback
+        self.app = ""
         
-        self.appList = Listbox(self.root, width=40, font=self.font_style) # Create listbox to allow user to select app
+        # Frame to hold applist and related widgets
+        self.frame_apps = Frame(self.root, padx=10, pady=10)
+        self.frame_apps.grid(column=0, row=0)
+        # Label for list of windows/apps
+        Label(self.frame_apps, text="Windows", font=self.font_heading).grid(row=0, sticky=W)
+        # Creating and populating listbox containing apps
+        self.listbox_apps = Listbox(self.frame_apps, width=40, font=self.font_container) # Create listbox to allow user to select app
         self.updateAppsList()
-        self.appList.pack() # Place listbox in root window
+        self.listbox_apps.grid(row=1, pady=5) # Place listbox in root window
+        # Button to refresh apps/windows list
+        Button(self.frame_apps, text="REFRESH LIST", command=self.updateAppsList, width=40).grid(row=2)
 
-        Button(self.root, text="REFRESH LIST", command=self.updateAppsList).pack()
-
-        # Create basic structure here
-        # e.g. Get apps button, select app,
-        #      record keypress button, start and stop afk button
-    
     def start(self):
         self.root.mainloop()
 
@@ -33,16 +42,16 @@ class Main:
         global app_exclusion
 
         # If the list of application actually has content
-        self.appList.delete('0', 'end') # Clear list
+        self.listbox_apps.delete('0', 'end') # Clear list
 
-        # Loop through applications and insert at bottom of listbox
         windows = [w.window_text() for w in Desktop(backend="uia").windows()] # active windows (static)
+        # Loop through applications and insert at bottom of listbox
         for window in windows:
             if window not in app_exclusion and window != self.root.title():
-                self.appList.insert(-1, window)
+                self.listbox_apps.insert(-1, window)
 
         # Scroll to top of list, forces update to listbox display
-        self.appList.yview_moveto(0)
+        self.listbox_apps.yview_moveto(0)
 
     def getForegroundWindow(self):
         hWnd = windll.user32.GetForegroundWindow()
