@@ -7,8 +7,8 @@ Application that takes keyboard inputs to automate and run for you on a selected
  - Implement save/load of keyboard recordings
 
  ### CHANGE LOG:
-  - Added basic UI widgets for key press recording and clearing
-  - Button methods are dummy at the moment, with messageboxes informing such
-  - Delay isn't used yet, but is intended for delay between playbacks of recording (in seconds)
+  - Minor updates to keypress ui elements, including text variable for delay
+  - Added function comments to Main class
+  - Added naming scheme in comments at start of file
 
 Overall: afk app is not yet functional, but is making progress

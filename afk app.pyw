@@ -6,7 +6,16 @@ from pywinauto import Desktop
 from tkinter import *
 from tkinter import messagebox
 
-app_exclusion = ["", "Taskbar", "Program Manager"]
+# VARIABLE NAMING SCHEME:
+# tkinterType_varPurpose
+# e.g. frame_keypresses
+
+# If, for example, frame in frame, then scheme is:
+# tkinterType_parent_varPurpose
+# e.g. frame_keypresses_buttons
+# putting in any number of parent widget before varPurpose
+
+app_exclusion = ["", "Taskbar", "Program Manager"] # "apps" to be excluded from apps/windows list
 
 class Main:
     def __init__(self):
@@ -21,7 +30,7 @@ class Main:
         self.font_heading = ("Helvetica", "12", "bold")
         self.font_setting = ("Helvetica", "11")
 
-
+        # Internal functionality variables
         self.afk = False # Controlled by afk start/stop button
         self.keys = None # Changed when key presses are recorded for afk playback, of type keyboard.KeyboardEvent
         self.app = ""
@@ -49,16 +58,22 @@ class Main:
         # Frame for keyboard recording buttons
         self.frame_keypresses_buttons = Frame(self.frame_keypresses)
         self.frame_keypresses_buttons.grid(row=1, column=1, pady=5, padx=5)
-        # Buttons for keyboard recording related stuff, temprorary config for some
+        # Buttons for keyboard recording related stuff
         Button(self.frame_keypresses_buttons, text="Record Keys", width=15, command=self.record).grid(row=0)
         Button(self.frame_keypresses_buttons, text="Clear Recording", width=15, command=self.clearKeys).grid(row=1, pady=20)
-        Label(self.frame_keypresses_buttons, text="Delay:", font=self.font_setting).grid(row=2, sticky=W)
-        self.textbox_playbackDelay = Entry(self.frame_keypresses_buttons, width=15, font=self.font_container)
+        # Label for delay
+        Label(self.frame_keypresses_buttons, text="Playback Delay:", font=self.font_setting).grid(row=2, sticky=W)
+        # String variable to contain defaults and input from user for playback delay
+        self.var_playbackDelay = StringVar(value="0")
+        # Single-line textbox to get playback delay from user
+        self.textbox_playbackDelay = Entry(self.frame_keypresses_buttons, width=15, font=self.font_container, textvariable=self.var_playbackDelay, justify="center")
         self.textbox_playbackDelay.grid(row=3)
 
+    # Method to start the application
     def start(self):
         self.root.mainloop()
 
+    # Update the listbox containing open applications
     def updateAppsList(self):
         global app_exclusion
 
@@ -73,12 +88,15 @@ class Main:
         # Scroll to top of list, forces update to listbox display
         self.listbox_apps.yview_moveto(0)
 
+    # Record keypresses until end signal and process
     def record(self):
         messagebox.showinfo( "Hello User", "Currently, recording hasn't been implemented")
 
+    # Clear recorded keypresses and relevant widgets
     def clearKeys(self):
         messagebox.showinfo( "Hello User", "Currently, clearing recordings hasn't been implemented")
 
+    # Get the active window, intended to use to auto-pause afk when not on selected application
     def getForegroundWindow(self):
         hWnd = windll.user32.GetForegroundWindow()
         length = windll.user32.GetWindowTextLengthW(hWnd)
@@ -94,7 +112,6 @@ class Main:
 #     print(currTime + paused)
 #     running = False if running else True
 
-# keyboard.add_hotkey('F2', closeLoop, suppress=True) # End app
 # keyboard.add_hotkey('F3', pauseLoop, suppress=True) # Pause app
 
 if __name__ == "__main__":
