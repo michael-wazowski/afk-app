@@ -9,7 +9,6 @@ app_exclusion = ["", "Taskbar", "Program Manager"]
 
 class Main:
     def __init__(self):
-        global app_exclusion
         self.root = Tk()
         self.root.geometry("600x600")
         self.font_style = ("Times New Roman", "11")
@@ -17,12 +16,8 @@ class Main:
         self.afk = False # Controlled by afk start/stop button
         self.keys = None # Changed when key presses are recorded for afk playback
         
-        windows = [w.window_text() for w in Desktop(backend="uia").windows()] # active windows (static)
         self.appList = Listbox(self.root, width=40, font=self.font_style) # Create listbox to allow user to select app
-        # Loop through applications and insert at bottom of listbox
-        for window in windows:
-            if window not in app_exclusion and window != self.root.title():
-                self.appList.insert(-1, window)
+        self.updateAppsList()
         self.appList.pack() # Place listbox in root window
 
         Button(self.root, text="REFRESH LIST", command=self.updateAppsList).pack()
@@ -37,10 +32,11 @@ class Main:
     def updateAppsList(self):
         global app_exclusion
 
+        # If the list of application actually has content
         self.appList.delete('0', 'end') # Clear list
 
-        # Update list with new windoes
-        windows = [w.window_text() for w in Desktop(backend="uia").windows()] 
+        # Loop through applications and insert at bottom of listbox
+        windows = [w.window_text() for w in Desktop(backend="uia").windows()] # active windows (static)
         for window in windows:
             if window not in app_exclusion and window != self.root.title():
                 self.appList.insert(-1, window)
