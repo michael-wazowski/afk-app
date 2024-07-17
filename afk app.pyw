@@ -53,7 +53,7 @@ class Main:
         # Label for keypress set up/configuration
         Label(self.frame_keypresses, text="Set up keypresses", font=self.font_heading).grid(row=0, sticky=W)
         # Listbox to hold recorded keypresses
-        self.listbox_keypresses = Listbox(self.frame_keypresses, width=40, height=11, font=self.font_container, state="disabled")
+        self.listbox_keypresses = Listbox(self.frame_keypresses, width=40, height=11, font=self.font_container, state="disabled", disabledforeground="black")
         self.listbox_keypresses.grid(row=1, column=0, pady=5, ipady=7)
         # Frame for keyboard recording buttons
         self.frame_keypresses_buttons = Frame(self.frame_keypresses)
@@ -91,26 +91,43 @@ class Main:
     # Record keypresses until end signal and process
     def record(self):
         # messagebox.showinfo( "Hello User", "Currently, recording hasn't been implemented")
-        info_window = Toplevel()
-        info_window.resizable(False, False)
-        info_window.protocol("WM_DELETE_WINDOW", self._disableEvent)
+        self.record_window = Toplevel()
+        self.record_window.resizable(False, False)
+        self.record_window.protocol("WM_DELETE_WINDOW", self._disableEvent)
 
         # Label to inform user that keyboard is being recorded
-        Label(info_window, text="You are currently recording your keyboard for playback.\nClick the button below to stop.").grid(sticky=N+E+S+W, pady=10, padx=10)
+        Label(self.record_window, text="You are currently recording your keyboard for playback.\nClick the button below to stop.").grid(sticky=N+E+S+W, pady=10, padx=10)
 
         # Place button to stop recording keypresses here
-        Button(info_window, text="Stop Recording", command=self._stopRecording).grid(sticky=N+E+S+W, pady=10, padx=10)
+        Button(self.record_window, text="Stop Recording", command=self._stopRecording).grid(sticky=N+E+S+W, pady=10, padx=10)
         
-        # start recording here:
-        ##
+        # start recording
+        self.keys = keyboard.start_recording()
     
     # internal method to stop recording keypresses
     def _stopRecording(self):
-        pass
+        if self.keys != None:
+            self.keys = keyboard.stop_recording()
+    
+            # Set listbox state to normal so it can be modified
+            self.listbox_keypresses.config(state="normal")
+            # self.listbox_keypresses.insert(0, *self.keys)
+            for keyEvent in self.keys:
+                # insert key event and system time (in seconds) it occured
+                self.listbox_keypresses.insert(-1, keyEvent.name + " : " + str(keyEvent.time))
+            self.listbox_keypresses.yview_moveto(0) # Scroll to force update
+            self.listbox_keypresses.config(state="disabled") # Disable again
+    
+            self.record_window.destroy() # Close window for recording keys
+
 
     # Clear recorded keypresses and relevant widgets
     def clearKeys(self):
-        messagebox.showinfo( "Hello User", "Currently, clearing recordings hasn't been implemented")
+        self.listbox_keypresses.config(state="normal")
+        self.listbox_keypresses.delete('0', 'end')
+        self.listbox_keypresses.yview_moveto(0)
+        self.listbox_keypresses.config(state="disabled")
+        self.keys = None
     
     # Disables close window button
     def _disableEvent(self):
