@@ -1,10 +1,12 @@
 import keyboard
 from time import sleep
+from time import time
 from ctypes import windll, create_unicode_buffer
 from datetime import datetime
 from pywinauto import Desktop
 from tkinter import *
 from tkinter import messagebox
+# import yaml
 
 # VARIABLE NAMING SCHEME:
 # tkinterType_varPurpose
@@ -34,6 +36,8 @@ class Main:
         self.afk = False # Controlled by afk start/stop button
         self.keys = None # Changed when key presses are recorded for afk playback, of type keyboard.KeyboardEvent
         self.app = ""
+        self.var_trueZero = IntVar() # Determines whether to include wait time between start recording actual keypresses
+        self.start_time = None 
         
         # Frame to hold applist and related widgets
         self.frame_apps = Frame(self.root, padx=10, pady=10)
@@ -69,6 +73,9 @@ class Main:
         self.textbox_playbackDelay = Entry(self.frame_keypresses_buttons, width=15, font=self.font_container, textvariable=self.var_playbackDelay, justify="center")
         self.textbox_playbackDelay.grid(row=3)
 
+        self.checkbtn_zeroTime = Checkbutton(self.frame_keypresses_buttons, variable=self.var_trueZero, onvalue=1, offvalue=0)
+        self.checkbtn_zeroTime.grid(row=4)
+
     # Method to start the application
     def start(self):
         self.root.mainloop()
@@ -103,23 +110,28 @@ class Main:
         
         # start recording
         self.keys = keyboard.start_recording()
+        # set start_time here for delta calculations for ui
+        self.start_time = time()
     
     # internal method to stop recording keypresses
     def _stopRecording(self):
         if self.keys != None:
             self.keys = keyboard.stop_recording()
-    
+
+            # If start from recording 0s is off
+            if self.var_trueZero.get() == 0:
+                self.start_time = self.keys[0].time # Get start time of first keypress
+
             # Set listbox state to normal so it can be modified
             self.listbox_keypresses.config(state="normal")
             # self.listbox_keypresses.insert(0, *self.keys)
             for keyEvent in self.keys:
                 # insert key event and system time (in seconds) it occured
-                self.listbox_keypresses.insert(-1, keyEvent.name + " : " + str(keyEvent.time))
+                self.listbox_keypresses.insert(END, keyEvent.name+"_"+ keyEvent.event_type + " : " + str(keyEvent.time-self.start_time))
             self.listbox_keypresses.yview_moveto(0) # Scroll to force update
             self.listbox_keypresses.config(state="disabled") # Disable again
     
             self.record_window.destroy() # Close window for recording keys
-
 
     # Clear recorded keypresses and relevant widgets
     def clearKeys(self):
