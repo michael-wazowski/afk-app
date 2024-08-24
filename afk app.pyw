@@ -10,11 +10,11 @@ from tkinter import messagebox
 
 # VARIABLE NAMING SCHEME:
 # tkinterType_varPurpose
-# e.g. frame_keypresses
+# e.g. frame_recording
 
 # If, for example, frame in frame, then scheme is:
 # tkinterType_parent_varPurpose
-# e.g. frame_keypresses_buttons
+# e.g. frame_recording_buttons
 # putting in any number of parent widget before varPurpose
 
 app_exclusion = ["", "Taskbar", "Program Manager"] # "apps" to be excluded from apps/windows list
@@ -26,6 +26,7 @@ class Main:
         self.root.geometry("735x600")
         self.root.resizable(False, False)
         self.root.title("AFK App")
+        self.root.rowconfigure(1, weight=1)
 
         # Font styles
         self.font_container = ("Times New Roman", "11")
@@ -41,7 +42,7 @@ class Main:
         
         # Frame to hold applist and related widgets
         self.frame_apps = Frame(self.root, padx=10, pady=10)
-        self.frame_apps.grid(column=0, row=0, sticky=N)
+        self.frame_apps.grid(column=0, row=0, sticky=N+E+S+W)
         # Label for list of windows/apps
         Label(self.frame_apps, text="Windows", font=self.font_heading).grid(row=0, sticky=W)
         # Creating and populating listbox containing apps
@@ -52,29 +53,43 @@ class Main:
         Button(self.frame_apps, text="REFRESH LIST", command=self.updateAppsList, width=40).grid(row=2)
         
         # Frame to hold keypress related widgets
-        self.frame_keypresses = Frame(self.root, padx=10, pady=10)
-        self.frame_keypresses.grid(column=1, row=0, sticky=N)
+        self.frame_recording = Frame(self.root, padx=10, pady=10)
+        self.frame_recording.grid(column=1, row=0, sticky=N+E+W+S)
         # Label for keypress set up/configuration
-        Label(self.frame_keypresses, text="Set up keypresses", font=self.font_heading).grid(row=0, sticky=W)
+        Label(self.frame_recording, text="Set up keypresses", font=self.font_heading).grid(row=0, sticky=W)
         # Listbox to hold recorded keypresses
-        self.listbox_keypresses = Listbox(self.frame_keypresses, width=40, height=11, font=self.font_container, state="disabled", disabledforeground="black")
-        self.listbox_keypresses.grid(row=1, column=0, pady=5, ipady=7)
+        self.listbox_recording = Listbox(self.frame_recording, width=40, height=11, font=self.font_container, state=DISABLED, disabledforeground="black")
+        self.listbox_recording.grid(row=1, column=0, pady=5, ipady=7)
         # Frame for keyboard recording buttons
-        self.frame_keypresses_buttons = Frame(self.frame_keypresses)
-        self.frame_keypresses_buttons.grid(row=1, column=1, pady=5, padx=5)
+        self.frame_recording_buttons = Frame(self.frame_recording)
+        self.frame_recording_buttons.grid(row=1, column=1, pady=5, padx=5)
         # Buttons for keyboard recording related stuff
-        Button(self.frame_keypresses_buttons, text="Record Keys", width=15, command=self.record).grid(row=0)
-        Button(self.frame_keypresses_buttons, text="Clear Recording", width=15, command=self.clearKeys).grid(row=1, pady=20)
+        Button(self.frame_recording_buttons, text="Record Keys", width=15, command=self.record).grid(row=0)
+        Button(self.frame_recording_buttons, text="Clear Recording", width=15, command=self.clearKeys).grid(row=1, pady=20)
+        # Checkbox for true zero in ui (not functional, may never be)
+        self.checkbtn_zeroTime = Checkbutton(self.frame_recording_buttons, variable=self.var_trueZero, onvalue=1, offvalue=0)
+        self.checkbtn_zeroTime.grid(row=4)
+
+        # Frame for start/stop of playback, and log of start/stop
+        self.frame_playback_logger = Frame(self.root, padx=10, pady=10,  highlightbackground="black", highlightthickness=1)
+        self.frame_playback_logger.grid(column=0, columnspan=2, row=1, sticky=N+E+W+S)
+        self.frame_playback_logger.rowconfigure(1, weight=1)
+
+        # Inner frame for playback controls/settings
+        self.frame_playback_logger_settings = Frame(self.frame_playback_logger, highlightbackground="black", highlightthickness=1)
+        self.frame_playback_logger_settings.grid(row=0, column=0, sticky=N+E+W)
+
         # Label for delay
-        Label(self.frame_keypresses_buttons, text="Playback Delay:", font=self.font_setting).grid(row=2, sticky=W)
+        Label(self.frame_playback_logger_settings, text="Playback Delay:", font=self.font_setting).grid(row=0, column=0)
         # String variable to contain defaults and input from user for playback delay
         self.var_playbackDelay = StringVar(value="0")
         # Single-line textbox to get playback delay from user
-        self.textbox_playbackDelay = Entry(self.frame_keypresses_buttons, width=15, font=self.font_container, textvariable=self.var_playbackDelay, justify="center")
-        self.textbox_playbackDelay.grid(row=3)
-
-        self.checkbtn_zeroTime = Checkbutton(self.frame_keypresses_buttons, variable=self.var_trueZero, onvalue=1, offvalue=0)
-        self.checkbtn_zeroTime.grid(row=4)
+        self.textbox_playbackDelay = Entry(self.frame_playback_logger_settings, width=15, font=self.font_container, textvariable=self.var_playbackDelay, justify="center")
+        self.textbox_playbackDelay.grid(row=1, column=0)
+        
+        # Listbox to log playback activity
+        self.listbox_logger = Listbox(self.frame_playback_logger, font=self.font_container, state=DISABLED, disabledforeground="black", width=101)
+        self.listbox_logger.grid(column=0, row=1, sticky=E+W+S)
 
     # Method to start the application
     def start(self):
@@ -84,20 +99,19 @@ class Main:
     def updateAppsList(self):
         global app_exclusion
 
-        self.listbox_apps.delete('0', 'end') # Clear list
+        self.listbox_apps.delete('0', END) # Clear list
 
         windows = [w.window_text() for w in Desktop(backend="uia").windows()] # active windows (static)
         # Loop through applications and insert at bottom of listbox
         for window in windows:
             if window not in app_exclusion and window != self.root.title():
-                self.listbox_apps.insert(-1, window)
+                self.listbox_apps.insert(END, window)
 
         # Scroll to top of list, forces update to listbox display
         self.listbox_apps.yview_moveto(0)
 
     # Record keypresses until end signal and process
     def record(self):
-        # messagebox.showinfo( "Hello User", "Currently, recording hasn't been implemented")
         self.record_window = Toplevel()
         self.record_window.resizable(False, False)
         self.record_window.protocol("WM_DELETE_WINDOW", self._disableEvent)
@@ -115,6 +129,7 @@ class Main:
     
     # internal method to stop recording keypresses
     def _stopRecording(self):
+        # Sanity check, in case method is triggered outside normal parameters
         if self.keys != None:
             self.keys = keyboard.stop_recording()
 
@@ -122,23 +137,22 @@ class Main:
             if self.var_trueZero.get() == 0:
                 self.start_time = self.keys[0].time # Get start time of first keypress
 
-            # Set listbox state to normal so it can be modified
-            self.listbox_keypresses.config(state="normal")
-            # self.listbox_keypresses.insert(0, *self.keys)
+            self.listbox_recording.config(state=NORMAL)
+
             for keyEvent in self.keys:
-                # insert key event and system time (in seconds) it occured
-                self.listbox_keypresses.insert(END, keyEvent.name+"_"+ keyEvent.event_type + " : " + str(keyEvent.time-self.start_time))
-            self.listbox_keypresses.yview_moveto(0) # Scroll to force update
-            self.listbox_keypresses.config(state="disabled") # Disable again
+                self.listbox_recording.insert(END, keyEvent.name+"_"+ keyEvent.event_type + " : " + str(keyEvent.time-self.start_time))
+
+            self.listbox_recording.yview_moveto(0)
+            self.listbox_recording.config(state=DISABLED)
     
             self.record_window.destroy() # Close window for recording keys
 
     # Clear recorded keypresses and relevant widgets
     def clearKeys(self):
-        self.listbox_keypresses.config(state="normal")
-        self.listbox_keypresses.delete('0', 'end')
-        self.listbox_keypresses.yview_moveto(0)
-        self.listbox_keypresses.config(state="disabled")
+        self.listbox_recording.config(state=NORMAL)
+        self.listbox_recording.delete('0', END)
+        self.listbox_recording.yview_moveto(0)
+        self.listbox_recording.config(state=DISABLED)
         self.keys = None
     
     # Disables close window button
