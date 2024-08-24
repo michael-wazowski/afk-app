@@ -4,11 +4,12 @@
   loop_limit: 10
 
 keys:
+- 'a': # Key to be pressed/released
+   #type: [] is optional, defaults to instant press and release
+    delta: 0 # Time to wait before key press
 - 'a':
-    delta: 0
-- 'a':
-    type: down
+    type: down # Down for key press
     delta: 2
 - 'a':
-    type: up
+    type: up # Up for key release
     delta: 2

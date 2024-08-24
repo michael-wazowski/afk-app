@@ -9,8 +9,8 @@ Application that takes keyboard inputs to automate and run for you on a selected
  - Application settings
 
  ### CHANGE LOG:
-  - Playback not yet implemented, but in next commit it will be
-  - Added logger listbox but not functional
-  - Moved playback delay setting to logger section, as that's actually where playback settings will be
+  - I lied. Playback still not yet implemented, aiming to be done next commit
+  - Redid formatting of area above logger, added some more playback settings
+  - Didn't put here last commit, but sample idea for save/load of keypress recording config
 
 Overall: afk app is not yet functional, but is making progress

@@ -71,25 +71,38 @@ class Main:
         self.checkbtn_zeroTime.grid(row=4)
 
         # Frame for start/stop of playback, and log of start/stop
-        self.frame_playback_logger = Frame(self.root, padx=10, pady=10,  highlightbackground="black", highlightthickness=1)
-        self.frame_playback_logger.grid(column=0, columnspan=2, row=1, sticky=N+E+W+S)
-        self.frame_playback_logger.rowconfigure(1, weight=1)
+        self.frame_playbackLogger = Frame(self.root,  highlightbackground="black", highlightthickness=1)
+        self.frame_playbackLogger.grid(column=0, columnspan=2, row=1, sticky=N+E+W+S)
+        self.frame_playbackLogger.rowconfigure(1, weight=1)
+
+        # Title label
+        Label(self.frame_playbackLogger, text="Configure and Playback Keypresses", font=self.font_heading).grid(row=0, column=0, sticky=W+N, padx=5)
 
         # Inner frame for playback controls/settings
-        self.frame_playback_logger_settings = Frame(self.frame_playback_logger, highlightbackground="black", highlightthickness=1)
-        self.frame_playback_logger_settings.grid(row=0, column=0, sticky=N+E+W)
+        self.frame_playbackLogger_settings = Frame(self.frame_playbackLogger, highlightbackground="black", highlightthickness=1)
+        self.frame_playbackLogger_settings.grid(row=1, column=0, sticky=N+E+W, padx=5, pady=10)
 
-        # Label for delay
-        Label(self.frame_playback_logger_settings, text="Playback Delay:", font=self.font_setting).grid(row=0, column=0)
-        # String variable to contain defaults and input from user for playback delay
-        self.var_playbackDelay = StringVar(value="0")
-        # Single-line textbox to get playback delay from user
-        self.textbox_playbackDelay = Entry(self.frame_playback_logger_settings, width=15, font=self.font_container, textvariable=self.var_playbackDelay, justify="center")
-        self.textbox_playbackDelay.grid(row=1, column=0)
+        # Delay at start of playback - default is 0
+        Label(self.frame_playbackLogger_settings, text="Playback Delay:", font=self.font_setting).grid(row=0, column=0, padx=5)
+        self.var_playbackDelay = StringVar(value="3") # Delay amount in seconds
+        self.textbox_playbackDelay = Entry(self.frame_playbackLogger_settings, width=15, font=self.font_container, textvariable=self.var_playbackDelay, justify=CENTER)
+        self.textbox_playbackDelay.grid(row=1, column=0, padx=5)
+
+        # To loop playback setting
+        Label(self.frame_playbackLogger_settings, text="Loop Playback:", font=self.font_setting).grid(row=0, column=1, padx=5)
+        self.var_playbackLoop = IntVar(value=1)
+        self.checkbtn_playbackLoop = Checkbutton(self.frame_playbackLogger_settings, variable=self.var_playbackLoop, onvalue=1, offvalue=0)
+        self.checkbtn_playbackLoop.grid(row=1, column=1, sticky=E+W, padx=5)
+
+        # Delay at start of playback - default is 0
+        Label(self.frame_playbackLogger_settings, text="Loop Limit:", font=self.font_setting).grid(row=0, column=2, padx=5)
+        self.var_loopLimit = StringVar(value="0") # Delay amount in seconds
+        self.textbox_loopLimit = Entry(self.frame_playbackLogger_settings, width=15, font=self.font_container, textvariable=self.var_loopLimit, justify=CENTER)
+        self.textbox_loopLimit.grid(row=1, column=2, padx=5)
         
         # Listbox to log playback activity
-        self.listbox_logger = Listbox(self.frame_playback_logger, font=self.font_container, state=DISABLED, disabledforeground="black", width=101)
-        self.listbox_logger.grid(column=0, row=1, sticky=E+W+S)
+        self.listbox_logger = Listbox(self.frame_playbackLogger, font=self.font_container, state=DISABLED, disabledforeground="black", width=101)
+        self.listbox_logger.grid(column=0, row=2, sticky=E+W+S, padx=10, pady=10)
 
     # Method to start the application
     def start(self):
