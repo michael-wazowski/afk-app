@@ -38,7 +38,10 @@ class Main:
         self.keys = None # Changed when key presses are recorded for afk playback, of type keyboard.KeyboardEvent
         self.app = ""
         self.var_trueZero = IntVar() # Determines whether to include wait time between start recording actual keypresses
-        self.start_time = None 
+        self.start_time = None
+
+        ## VALIDATION FUNC
+        self._rValidateLoopLimit = (self.root.register(self._validateLoopLimit), '%P')
         
         # Frame to hold applist and related widgets
         self.frame_apps = Frame(self.root, padx=10, pady=10)
@@ -94,11 +97,14 @@ class Main:
         self.checkbtn_playbackLoop = Checkbutton(self.frame_playbackLogger_settings, variable=self.var_playbackLoop, onvalue=1, offvalue=0)
         self.checkbtn_playbackLoop.grid(row=1, column=1, sticky=E+W, padx=5)
 
-        # Delay at start of playback - default is 0
+        # Number of times to loop - default is 0 which means until the user stops or conditions are met
         Label(self.frame_playbackLogger_settings, text="Loop Limit:", font=self.font_setting).grid(row=0, column=2, padx=5)
         self.var_loopLimit = StringVar(value="0") # Delay amount in seconds
-        self.textbox_loopLimit = Entry(self.frame_playbackLogger_settings, width=15, font=self.font_container, textvariable=self.var_loopLimit, justify=CENTER)
+        self.textbox_loopLimit = Spinbox(self.frame_playbackLogger_settings, width=15, font=self.font_container, textvariable=self.var_loopLimit, justify=CENTER, to=1000, validate=ALL, validatecommand=self._rValidateLoopLimit)
         self.textbox_loopLimit.grid(row=1, column=2, padx=5)
+
+        # Button to start/stop playback
+        Button(self.frame_playbackLogger_settings, text="Start/Stop Playback", command=self.playbackRecording).grid(row=0, rowspan=2, column=3, padx=5, sticky=E)
         
         # Listbox to log playback activity
         self.listbox_logger = Listbox(self.frame_playbackLogger, font=self.font_container, state=DISABLED, disabledforeground="black", width=101)
@@ -122,6 +128,9 @@ class Main:
 
         # Scroll to top of list, forces update to listbox display
         self.listbox_apps.yview_moveto(0)
+    
+    def _validateLoopLimit(self, text):
+        return text.isnumeric() or text==''
 
     # Record keypresses until end signal and process
     def record(self):
@@ -153,7 +162,7 @@ class Main:
             self.listbox_recording.config(state=NORMAL)
 
             for keyEvent in self.keys:
-                self.listbox_recording.insert(END, keyEvent.name+"_"+ keyEvent.event_type + " : " + str(keyEvent.time-self.start_time))
+                self.listbox_recording.insert(END, keyEvent.name+"_"+ keyEvent.event_type + " : " + str(round(keyEvent.time-self.start_time, 3)))
 
             self.listbox_recording.yview_moveto(0)
             self.listbox_recording.config(state=DISABLED)
@@ -180,13 +189,16 @@ class Main:
         windll.user32.GetWindowTextW(hWnd, buf, length + 1)
         return buf.value if buf.value else "None"
 
-# def pauseLoop():
-#     global running
-#     nowTime = datetime.now()
-#     currTime = nowTime.strftime("%H:%M:%S")
-#     paused = " # " + ("Paused" if running else "Unpaused")
-#     print(currTime + paused)
-#     running = False if running else True
+    def playbackRecording(self):
+        if self.keys != None and str(type(self.keys)) == "<class 'list'>" and len(self.keys) > 0:
+            print(self.keys)
+
+            keyboard.play(self.keys)
+        # nowTime = datetime.now()
+        # currTime = nowTime.strftime("%H:%M:%S")
+        # paused = " # " + ("Paused" if self.afk else "Unpaused")
+        # print(currTime + paused)
+        # self.afk = False if self.afk else True
 
 # keyboard.add_hotkey('F3', pauseLoop, suppress=True) # Pause app
 

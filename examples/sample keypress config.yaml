@@ -5,11 +5,14 @@
 
 keys:
 - 'a': # Key to be pressed/released
-   #type: [] is optional, defaults to instant press and release
-    delta: 0 # Time to wait before key press
+   #type: x is optional, defaults to instant press and release, or user can set it to press
+    delta: 0 # Time to wait before key press in seconds
 - 'a':
-    type: down # Down for key press
+    type: down # Down for key press down
     delta: 2
 - 'a':
     type: up # Up for key release
+    delta: 2
+- 'a':
+    type: press
     delta: 2
