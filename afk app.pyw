@@ -191,20 +191,27 @@ class Main:
         windll.user32.GetWindowTextW(hWnd, buf, length + 1)
         return buf.value if buf.value else "None"
 
+    # Func to loop x number of times for playback
     def _playbackLoop(self, loopLimit, playbackDelay):
+        # While user is afk and loop count is in ranges
         while (loopLimit > 0 or loopLimit < 0) and self.afk:
             if playbackDelay > 0:
                 sleep(playbackDelay)
-            
             keyboard.play(self.keys)
             loopLimit -= 1
 
-    # PUT INTO FUNC FOR LOGGER CALLS
-        # nowTime = datetime.now()
-        # currTime = nowTime.strftime("%H:%M:%S")
-        # paused = " # " + ("Paused" if self.afk else "Unpaused")
-        # print(currTime + paused)
-        # self.afk = False if self.afk else True
+        self.afk = False
+        self._sendToLogger("Playback stopped")
+
+    def _sendToLogger(self, logMessage):
+        # Construct full message to send to logger
+        currentTime = (datetime.now()).strftime("%H:%M:%S")
+        msg = currentTime + " # " + logMessage
+        # Unlock logger and "write" message before forcing update
+        self.listbox_logger.config(state=NORMAL)
+        self.listbox_logger.insert(END, msg)
+        self.listbox_logger.config(state=DISABLED)
+        self.listbox_logger.yview_scroll(1, UNITS)
 
     # Actually starts/stops playback of recorded keypresses
     def playbackRecording(self):
@@ -212,6 +219,7 @@ class Main:
         if self.keys != None and str(type(self.keys)) == "<class 'list'>" and len(self.keys) > 0:
             # If currently playing back recording
             if self.playbackThread != None and self.afk:
+                self._sendToLogger("Stopping playback...")
                 self.afk = False
                 # Wait until playback thread is done
                 while self.playbackThread.is_alive():
@@ -222,25 +230,23 @@ class Main:
             # Get user config values and process them
             playbackDelay = int(self.var_playbackDelay.get())
             looping = self.var_playbackLoop.get()==1
+            # If user wants to loop playback
             if looping:
                 loopLimit = self.var_loopLimit.get()
                 if int(loopLimit) > 0:
                     loopLimit = int(loopLimit)
                 else:
                     loopLimit = -1
-                
-                # Set afk to true show that looped playback is occurring 
-                self.afk = True
-                
-                # Init and start playback
-                self.playbackThread = Thread(target=self._playbackLoop, args=[loopLimit, playbackDelay])
-                self.playbackThread.start()
-
             else:
-                # Playback is not looped, so simply play recording
-                if playbackDelay > 0:
-                    sleep(playbackDelay)
-                keyboard.play(self.keys)
+                # Since it only runs once anyways, just fix loops to 1
+                loopLimit = 1
+            
+            # Set afk to true show that looped playback is occurring 
+            self.afk = True
+            self._sendToLogger("Starting playback")
+            # Init and start playback
+            self.playbackThread = Thread(target=self._playbackLoop, args=[loopLimit, playbackDelay])
+            self.playbackThread.start()
 
 # keyboard.add_hotkey('F3', pauseLoop, suppress=True) # Pause app
 
