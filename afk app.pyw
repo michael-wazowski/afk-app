@@ -6,6 +6,7 @@ from datetime import datetime
 from pywinauto import Desktop
 from tkinter import *
 from tkinter import messagebox
+from threading import Thread
 # import yaml
 
 # VARIABLE NAMING SCHEME:
@@ -39,9 +40,10 @@ class Main:
         self.app = ""
         self.var_trueZero = IntVar() # Determines whether to include wait time between start recording actual keypresses
         self.start_time = None
+        self.playbackThread = None
 
-        ## VALIDATION FUNC
-        self._rValidateLoopLimit = (self.root.register(self._validateLoopLimit), '%P')
+        # root register function to validate spinbox input
+        self._rValidateSpinBox = (self.root.register(self._validateSpinBox), '%P')
         
         # Frame to hold applist and related widgets
         self.frame_apps = Frame(self.root, padx=10, pady=10)
@@ -88,7 +90,7 @@ class Main:
         # Delay at start of playback - default is 0
         Label(self.frame_playbackLogger_settings, text="Playback Delay:", font=self.font_setting).grid(row=0, column=0, padx=5)
         self.var_playbackDelay = StringVar(value="3") # Delay amount in seconds
-        self.textbox_playbackDelay = Entry(self.frame_playbackLogger_settings, width=15, font=self.font_container, textvariable=self.var_playbackDelay, justify=CENTER)
+        self.textbox_playbackDelay = Spinbox(self.frame_playbackLogger_settings, width=15, font=self.font_container, textvariable=self.var_playbackDelay, justify=CENTER, to=1000, validate=ALL, validatecommand=self._rValidateSpinBox)
         self.textbox_playbackDelay.grid(row=1, column=0, padx=5)
 
         # To loop playback setting
@@ -100,7 +102,7 @@ class Main:
         # Number of times to loop - default is 0 which means until the user stops or conditions are met
         Label(self.frame_playbackLogger_settings, text="Loop Limit:", font=self.font_setting).grid(row=0, column=2, padx=5)
         self.var_loopLimit = StringVar(value="0") # Delay amount in seconds
-        self.textbox_loopLimit = Spinbox(self.frame_playbackLogger_settings, width=15, font=self.font_container, textvariable=self.var_loopLimit, justify=CENTER, to=1000, validate=ALL, validatecommand=self._rValidateLoopLimit)
+        self.textbox_loopLimit = Spinbox(self.frame_playbackLogger_settings, width=15, font=self.font_container, textvariable=self.var_loopLimit, justify=CENTER, to=1000, validate=ALL, validatecommand=self._rValidateSpinBox)
         self.textbox_loopLimit.grid(row=1, column=2, padx=5)
 
         # Button to start/stop playback
@@ -129,7 +131,7 @@ class Main:
         # Scroll to top of list, forces update to listbox display
         self.listbox_apps.yview_moveto(0)
     
-    def _validateLoopLimit(self, text):
+    def _validateSpinBox(self, text):
         return text.isnumeric() or text==''
 
     # Record keypresses until end signal and process
@@ -189,16 +191,56 @@ class Main:
         windll.user32.GetWindowTextW(hWnd, buf, length + 1)
         return buf.value if buf.value else "None"
 
-    def playbackRecording(self):
-        if self.keys != None and str(type(self.keys)) == "<class 'list'>" and len(self.keys) > 0:
-            print(self.keys)
-
+    def _playbackLoop(self, loopLimit, playbackDelay):
+        while (loopLimit > 0 or loopLimit < 0) and self.afk:
+            if playbackDelay > 0:
+                sleep(playbackDelay)
+            
             keyboard.play(self.keys)
+            loopLimit -= 1
+
+    # PUT INTO FUNC FOR LOGGER CALLS
         # nowTime = datetime.now()
         # currTime = nowTime.strftime("%H:%M:%S")
         # paused = " # " + ("Paused" if self.afk else "Unpaused")
         # print(currTime + paused)
         # self.afk = False if self.afk else True
+
+    # Actually starts/stops playback of recorded keypresses
+    def playbackRecording(self):
+        # If there might be a recording, AND it is a recording (they are a list) and there are actual keypresses in there
+        if self.keys != None and str(type(self.keys)) == "<class 'list'>" and len(self.keys) > 0:
+            # If currently playing back recording
+            if self.playbackThread != None and self.afk:
+                self.afk = False
+                # Wait until playback thread is done
+                while self.playbackThread.is_alive():
+                    pass
+                self.playbackThread = None # reset var
+                return # End func call early
+            
+            # Get user config values and process them
+            playbackDelay = int(self.var_playbackDelay.get())
+            looping = self.var_playbackLoop.get()==1
+            if looping:
+                loopLimit = self.var_loopLimit.get()
+                if int(loopLimit) > 0:
+                    loopLimit = int(loopLimit)
+                else:
+                    loopLimit = -1
+                
+                # Set afk to true show that looped playback is occurring 
+                self.afk = True
+                
+                # Init and start playback
+                self.playbackThread = Thread(target=self._playbackLoop, args=[loopLimit, playbackDelay])
+                self.playbackThread.start()
+
+            else:
+                # Playback is not looped, so simply play recording
+                if playbackDelay > 0:
+                    sleep(playbackDelay)
+                keyboard.play(self.keys)
 
 # keyboard.add_hotkey('F3', pauseLoop, suppress=True) # Pause app
 
