@@ -36,6 +36,7 @@ class Main:
 
         # Internal functionality variables
         self.afk = False # Controlled by afk start/stop button
+        self.unpaused = True
         self.keys = None # Changed when key presses are recorded for afk playback, of type keyboard.KeyboardEvent
         self.app = ""
         self.var_trueZero = IntVar() # Determines whether to include wait time between start recording actual keypresses
@@ -45,6 +46,19 @@ class Main:
         # root register function to validate spinbox input
         self._rValidateSpinBox = (self.root.register(self._validateSpinBox), '%P')
         
+        # Functions to load certain sets of widgets
+        # Loads app list and refresh button
+        self._loadAppsWidgets()
+        # Load recording listbox and related buttons
+        self._loadRecordingWidgets()
+        # Loads logger and playback configs and buttons
+        self._loadPlaybackLoggerWidgets()
+
+    # Method to start the application
+    def start(self):
+        self.root.mainloop()
+
+    def _loadAppsWidgets(self):
         # Frame to hold applist and related widgets
         self.frame_apps = Frame(self.root, padx=10, pady=10)
         self.frame_apps.grid(column=0, row=0, sticky=N+E+S+W)
@@ -56,7 +70,8 @@ class Main:
         self.listbox_apps.grid(row=1, pady=5) # Place listbox in root window
         # Button to refresh apps/windows list
         Button(self.frame_apps, text="REFRESH LIST", command=self.updateAppsList, width=40).grid(row=2)
-        
+    
+    def _loadRecordingWidgets(self):
         # Frame to hold keypress related widgets
         self.frame_recording = Frame(self.root, padx=10, pady=10)
         self.frame_recording.grid(column=1, row=0, sticky=N+E+W+S)
@@ -74,7 +89,8 @@ class Main:
         # Checkbox for true zero in ui (not functional, may never be)
         self.checkbtn_zeroTime = Checkbutton(self.frame_recording_buttons, variable=self.var_trueZero, onvalue=1, offvalue=0)
         self.checkbtn_zeroTime.grid(row=4)
-
+    
+    def _loadPlaybackLoggerWidgets(self):
         # Frame for start/stop of playback, and log of start/stop
         self.frame_playbackLogger = Frame(self.root,  highlightbackground="black", highlightthickness=1)
         self.frame_playbackLogger.grid(column=0, columnspan=2, row=1, sticky=N+E+W+S)
@@ -83,6 +99,13 @@ class Main:
         # Title label
         Label(self.frame_playbackLogger, text="Configure and Playback Keypresses", font=self.font_heading).grid(row=0, column=0, sticky=W+N, padx=5)
 
+        self._loadPlaybackControlsSettings()
+
+        # Listbox to log playback activity
+        self.listbox_logger = Listbox(self.frame_playbackLogger, font=self.font_container, state=DISABLED, disabledforeground="black", width=101)
+        self.listbox_logger.grid(column=0, row=2, sticky=E+W+S, padx=10, pady=10)
+    
+    def _loadPlaybackControlsSettings(self):
         # Inner frame for playback controls/settings
         self.frame_playbackLogger_settings = Frame(self.frame_playbackLogger, highlightbackground="black", highlightthickness=1)
         self.frame_playbackLogger_settings.grid(row=1, column=0, sticky=N+E+W, padx=5, pady=10)
@@ -106,15 +129,9 @@ class Main:
         self.textbox_loopLimit.grid(row=1, column=2, padx=5)
 
         # Button to start/stop playback
-        Button(self.frame_playbackLogger_settings, text="Start/Stop Playback", command=self.playbackRecording).grid(row=0, rowspan=2, column=3, padx=5, sticky=E)
-        
-        # Listbox to log playback activity
-        self.listbox_logger = Listbox(self.frame_playbackLogger, font=self.font_container, state=DISABLED, disabledforeground="black", width=101)
-        self.listbox_logger.grid(column=0, row=2, sticky=E+W+S, padx=10, pady=10)
-
-    # Method to start the application
-    def start(self):
-        self.root.mainloop()
+        Button(self.frame_playbackLogger_settings, text="Start/Stop Playback", command=self.playbackRecording, font=self.font_setting).grid(row=0, rowspan=2, column=3, padx=5, sticky=E)
+        # Button to pause/unpause playback
+        Button(self.frame_playbackLogger_settings, text="Pause/Unpause Playback", command=self.pausePlayback, font=self.font_setting).grid(row=0, rowspan=2, column=4, padx=5, sticky=E)
 
     # Update the listbox containing open applications
     def updateAppsList(self):
@@ -195,10 +212,14 @@ class Main:
     def _playbackLoop(self, loopLimit, playbackDelay):
         # While user is afk and loop count is in ranges
         while (loopLimit > 0 or loopLimit < 0) and self.afk:
-            if playbackDelay > 0:
-                sleep(playbackDelay)
-            keyboard.play(self.keys)
-            loopLimit -= 1
+            # If playback not pause by user
+            if self.unpaused:
+                if playbackDelay > 0:
+                    sleep(playbackDelay)
+                keyboard.play(self.keys)
+                loopLimit -= 1
+            else:
+                sleep(1)
 
         self.afk = False
         self._sendToLogger("Playback stopped")
@@ -247,6 +268,16 @@ class Main:
             # Init and start playback
             self.playbackThread = Thread(target=self._playbackLoop, args=[loopLimit, playbackDelay])
             self.playbackThread.start()
+    
+    # Function to pause playback
+    def pausePlayback(self):
+        # Log according to current pause state
+        if self.unpaused:
+            self._sendToLogger("Pausing playback")
+        else:
+            self._sendToLogger("Unpausing playback")
+        # Alternate pause state using python ternary equivalent
+        self.unpaused = False if self.unpaused else True
 
 # keyboard.add_hotkey('F3', pauseLoop, suppress=True) # Pause app
 
