@@ -1,12 +1,12 @@
 import keyboard
-from time import sleep
-from time import time
+from time import sleep, time
 from ctypes import windll, create_unicode_buffer
 from datetime import datetime
 from pywinauto import Desktop
 from tkinter import *
 from tkinter import messagebox
 from threading import Thread
+from recording import Recording
 # import yaml
 
 # VARIABLE NAMING SCHEME:
@@ -99,6 +99,8 @@ class Main:
         # Title label
         Label(self.frame_playbackLogger, text="Configure and Playback Keypresses", font=self.font_heading).grid(row=0, column=0, sticky=W+N, padx=5)
 
+        # Further separated cos there was so much
+        # Loads widgets for playback settings and buttons
         self._loadPlaybackControlsSettings()
 
         # Listbox to log playback activity
@@ -153,40 +155,7 @@ class Main:
 
     # Record keypresses until end signal and process
     def record(self):
-        self.record_window = Toplevel()
-        self.record_window.resizable(False, False)
-        self.record_window.protocol("WM_DELETE_WINDOW", self._disableEvent)
-
-        # Label to inform user that keyboard is being recorded
-        Label(self.record_window, text="You are currently recording your keyboard for playback.\nClick the button below to stop.").grid(sticky=N+E+S+W, pady=10, padx=10)
-
-        # Place button to stop recording keypresses here
-        Button(self.record_window, text="Stop Recording", command=self._stopRecording).grid(sticky=N+E+S+W, pady=10, padx=10)
-        
-        # start recording
-        self.keys = keyboard.start_recording()
-        # set start_time here for delta calculations for ui
-        self.start_time = time()
-    
-    # internal method to stop recording keypresses
-    def _stopRecording(self):
-        # Sanity check, in case method is triggered outside normal parameters
-        if self.keys != None:
-            self.keys = keyboard.stop_recording()
-
-            # If start from recording 0s is off
-            if self.var_trueZero.get() == 0:
-                self.start_time = self.keys[0].time # Get start time of first keypress
-
-            self.listbox_recording.config(state=NORMAL)
-
-            for keyEvent in self.keys:
-                self.listbox_recording.insert(END, keyEvent.name+"_"+ keyEvent.event_type + " : " + str(round(keyEvent.time-self.start_time, 3)))
-
-            self.listbox_recording.yview_moveto(0)
-            self.listbox_recording.config(state=DISABLED)
-    
-            self.record_window.destroy() # Close window for recording keys
+        self.keys = Recording(self.listbox_recording)
 
     # Clear recorded keypresses and relevant widgets
     def clearKeys(self):
@@ -195,10 +164,6 @@ class Main:
         self.listbox_recording.yview_moveto(0)
         self.listbox_recording.config(state=DISABLED)
         self.keys = None
-    
-    # Disables close window button
-    def _disableEvent(self):
-        pass
 
     # Get the active window, intended to use to auto-pause afk when not on selected application
     def getForegroundWindow(self):
@@ -216,7 +181,7 @@ class Main:
             if self.unpaused:
                 if playbackDelay > 0:
                     sleep(playbackDelay)
-                keyboard.play(self.keys)
+                keyboard.play(self.keys.getRecording())
                 loopLimit -= 1
             else:
                 sleep(1)
@@ -237,7 +202,7 @@ class Main:
     # Actually starts/stops playback of recorded keypresses
     def playbackRecording(self):
         # If there might be a recording, AND it is a recording (they are a list) and there are actual keypresses in there
-        if self.keys != None and str(type(self.keys)) == "<class 'list'>" and len(self.keys) > 0:
+        if self.keys != None and type(self.keys.getRecording()) == type(list) and len(self.keys.getRecording()) > 0:
             # If currently playing back recording
             if self.playbackThread != None and self.afk:
                 self._sendToLogger("Stopping playback...")

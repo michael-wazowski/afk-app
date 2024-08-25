@@ -5,8 +5,8 @@ Application that takes keyboard inputs to automate and run for you on a selected
  - Implement save/load of keyboard recordings
  - Keyboard press settings implementation
  - Application settings
- - Refactor recording related code into new class
 
 ## CHANGE LOG:
- - Playback pause and unpause implemented
- - Refactored UI creation code so it's easier to find where to change things
+ - Recording related code refactored to a minimum standard
+ - Added some lines to gitignore cos of refactor
+ - Gonna do save/load next, which requires modifications to Recording class
