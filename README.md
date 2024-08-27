@@ -2,11 +2,11 @@
 Application that takes keyboard inputs to automate and run for you on a selected application window.
 
 ## TODO:
- - Implement save/load of keyboard recordings
+ - Implement save of keyboard recordings
  - Keyboard press settings implementation
  - Application settings
 
 ## CHANGE LOG:
- - Recording related code refactored to a minimum standard
- - Added some lines to gitignore cos of refactor
- - Gonna do save/load next, which requires modifications to Recording class
+ - Started some ideal functions for future features, they hardly do anything though
+ - Implemented keyboard recording load. They *can* be used for playback
+ - Saving not done yet, will come next. For now, use only example to create manual "recordings" to load in

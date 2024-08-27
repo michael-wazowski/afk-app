@@ -6,8 +6,15 @@ from pywinauto import Desktop
 from tkinter import *
 from tkinter import messagebox
 from threading import Thread
+
+import yaml.loader
 from recording import Recording
-# import yaml
+from tkinter.filedialog import askopenfilename, asksaveasfilename
+from yaml import load, dump
+try:
+    from yaml import CLoader as Loader, CDumper as Dumper
+except ImportError:
+    from yaml import Loader, Dumper
 
 # VARIABLE NAMING SCHEME:
 # tkinterType_varPurpose
@@ -84,11 +91,13 @@ class Main:
         self.frame_recording_buttons = Frame(self.frame_recording)
         self.frame_recording_buttons.grid(row=1, column=1, pady=5, padx=5)
         # Buttons for keyboard recording related stuff
-        Button(self.frame_recording_buttons, text="Record Keys", width=15, command=self.record).grid(row=0)
-        Button(self.frame_recording_buttons, text="Clear Recording", width=15, command=self.clearKeys).grid(row=1, pady=20)
+        Button(self.frame_recording_buttons, text="Save Recording", width=15, command=self.save).grid(row=0, pady=10)
+        Button(self.frame_recording_buttons, text="Load Recording", width=15, command=self.load).grid(row=1, pady=10)
+        Button(self.frame_recording_buttons, text="Record Keys", width=15, command=self.record).grid(row=2, pady=10)
+        Button(self.frame_recording_buttons, text="Clear Recording", width=15, command=self.clearKeys).grid(row=3, pady=10)
         # Checkbox for true zero in ui (not functional, may never be)
-        self.checkbtn_zeroTime = Checkbutton(self.frame_recording_buttons, variable=self.var_trueZero, onvalue=1, offvalue=0)
-        self.checkbtn_zeroTime.grid(row=4)
+        # self.checkbtn_zeroTime = Checkbutton(self.frame_recording_buttons, variable=self.var_trueZero, onvalue=1, offvalue=0)
+        # self.checkbtn_zeroTime.grid(row=4)
     
     def _loadPlaybackLoggerWidgets(self):
         # Frame for start/stop of playback, and log of start/stop
@@ -175,6 +184,7 @@ class Main:
 
     # Func to loop x number of times for playback
     def _playbackLoop(self, loopLimit, playbackDelay):
+        self._sendToLogger("Starting playback")
         # While user is afk and loop count is in ranges
         while (loopLimit > 0 or loopLimit < 0) and self.afk:
             # If playback not pause by user
@@ -182,6 +192,8 @@ class Main:
                 if playbackDelay > 0:
                     sleep(playbackDelay)
                 keyboard.play(self.keys.getRecording())
+                # for key in self.keys.processRecording():
+                #     keyboard.play(key)
                 loopLimit -= 1
             else:
                 sleep(1)
@@ -202,11 +214,12 @@ class Main:
     # Actually starts/stops playback of recorded keypresses
     def playbackRecording(self):
         # If there might be a recording, AND it is a recording (they are a list) and there are actual keypresses in there
-        if self.keys != None and type(self.keys.getRecording()) == type(list) and len(self.keys.getRecording()) > 0:
+        if self.keys != None and type(self.keys.getRecording()) == type([]) and len(self.keys.getRecording()) > 0:
             # If currently playing back recording
             if self.playbackThread != None and self.afk:
                 self._sendToLogger("Stopping playback...")
                 self.afk = False
+
                 # Wait until playback thread is done
                 while self.playbackThread.is_alive():
                     pass
@@ -229,7 +242,6 @@ class Main:
             
             # Set afk to true show that looped playback is occurring 
             self.afk = True
-            self._sendToLogger("Starting playback")
             # Init and start playback
             self.playbackThread = Thread(target=self._playbackLoop, args=[loopLimit, playbackDelay])
             self.playbackThread.start()
@@ -243,6 +255,36 @@ class Main:
             self._sendToLogger("Unpausing playback")
         # Alternate pause state using python ternary equivalent
         self.unpaused = False if self.unpaused else True
+    
+    # Core method to save recording and config
+    def save(self):
+        pass
+
+    # Core method to load recording and config
+    def load(self):
+        # Get filepath from user and load yaml file
+        filepath = askopenfilename(filetypes=[("YAML Files", "*.yaml")])
+        with open(filepath, 'rt', encoding='utf8') as recFile:
+            data = yaml.load(recFile, Loader=Loader)
+        
+        # Branch according to what is in the file
+        if "config" in data:
+            self._loadConfig(data["config"])
+        if "keys" in data:
+            self.keys = Recording(self.listbox_recording, True, data["keys"])
+
+    # Set the information depending on what is found
+    def _loadConfig(self, config:dict):
+        if "delay" in config:
+            self.var_playbackDelay.set(str(config["delay"]))
+        # Loop was auto-converted to py bool
+        if "loop" in config:
+            if config["loop"]:
+                self.var_playbackLoop.set(1) # yes loop
+            elif config["loop"] == False:
+                self.var_playbackLoop.set(0) # no loop
+        if "loop_limit" in config:
+            self.var_loopLimit.set(str(config["loop_limit"]))
 
 # keyboard.add_hotkey('F3', pauseLoop, suppress=True) # Pause app
 

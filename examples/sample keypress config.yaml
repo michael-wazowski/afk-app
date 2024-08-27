@@ -1,4 +1,4 @@
-﻿settings:
+﻿config:
   delay: 5
   loop: true
   loop_limit: 10
