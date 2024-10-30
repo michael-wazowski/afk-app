@@ -3,16 +3,16 @@ from time import time
 import keyboard
 
 class Recording:
-    def __init__(self, output: Listbox=None, loading:bool=False, keys:list=None):
+    def __init__(self, output: Listbox=None, load_info:dict=None):
         self.output_box = output
 
         # If not loading from file
-        if not loading:
+        if not load_info:
             # Record like normal
             self._startRecording()
         else:
             # Run load method passing acquired data
-            self._loadKeys(keys)
+            self._loadKeys(load_info['keys'])
     
     # Disables close window button
     def _disableEvent(self):
@@ -39,6 +39,18 @@ class Recording:
         if self.recording != None:
             self.recording = keyboard.stop_recording()
 
+            # Remove duplicate key entries due to holding down key
+            # COME BACK TO THIS EVENTUALLY - IT IS IMPORTANT
+            # ptr = 0
+            # skipInfo = {}
+            # while ptr < len(self.recording):
+            #     curr = self.recording[ptr]
+            #     next = self.recording[ptr+1]
+            #     if curr.name == next.name and curr.event_type == next.event_type:
+            #         if next.time-curr.time <= 0.05:
+            #             skipInfo[str(ptr)] = ptr+1
+            #     ptr += 1
+
             # If start from recording 0s is off
             if zero == 0 and len(self.recording) > 0:
                 self.start_time = self.recording[0].time # Get start time of first keypress
@@ -59,6 +71,7 @@ class Recording:
     def _loadKeys(self, keys:list): 
         output = [] # temp list for processing
         total_time = 0.0 # Total time so far in recording
+        self.start_time = 0
 
         # Loop through each item and get the key to be controlled
         for key in keys:
@@ -110,6 +123,47 @@ class Recording:
     # Return recorded keys list
     def getRecording(self):
         return self.recording
+
+    def outputKeys(self):
+        keys = []
+
+        kp = 0
+        delta = 0
+        while kp < len(self.recording):
+            curr = self.recording[kp]
+            next = self.recording[kp+1] if kp < len(self.recording)-1 else self.recording[kp]
+            if curr.name == next.name and curr.event_type != next.event_type:
+                if round(next.time-curr.time, 5) <= 0.1:
+                    keys.append({
+                        curr.name : {
+                        "type":"press",
+                        "delta": round(curr.time-delta, 3)
+                        }
+                    })
+                    delta = next.time
+                    kp += 1
+                else:
+                    keys.append({
+                        curr.name : {
+                        "type": curr.event_type,
+                        "delta": round(curr.time-delta, 3)
+                        }
+                    })
+                    delta = curr.time
+            else:
+                keys.append({
+                    curr.name : {
+                    "type": curr.event_type,
+                    "delta": round(curr.time-delta, 3)
+                    }
+                })
+                delta = curr.time
+        
+            kp += 1
+        
+        return keys
+
+    
 
     # Process recording for paused playback at any key
     # DOES NOT TAKE KEYS LIKE SHIFT AND CTRL INTO ACCOUNT

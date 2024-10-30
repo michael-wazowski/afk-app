@@ -9,7 +9,7 @@ from threading import Thread
 
 import yaml.loader
 from recording import Recording
-from tkinter.filedialog import askopenfilename, asksaveasfilename
+from tkinter.filedialog import askopenfilename, asksaveasfile
 from yaml import load, dump
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
@@ -164,7 +164,7 @@ class Main:
 
     # Record keypresses until end signal and process
     def record(self):
-        self.keys = Recording(self.listbox_recording)
+        self.keys = Recording(output=self.listbox_recording, load_info=None)
 
     # Clear recorded keypresses and relevant widgets
     def clearKeys(self):
@@ -258,7 +258,68 @@ class Main:
     
     # Core method to save recording and config
     def save(self):
-        pass
+        # ERROR CHECK FOR NO RECORDING. COMMENTED OUT FOR DEV PURPOSES
+        if self.keys == None:
+            messagebox.showerror(message="There is no recording available. Create or load one before trying to save again.", title="Recording Save Error")
+            return
+
+        self.saveDialog = Toplevel()
+        self.saveDialog.geometry("200x250")
+        self.saveDialog.resizable(False, False)
+        self.saveDialog.focus()
+
+        # PUT OPTIONS IN DIALOG
+        baseFrame = Frame(self.saveDialog)
+        baseFrame.grid(padx=4, pady=4, ipadx=4, ipady=4)
+
+        innerFrame = Frame(baseFrame, highlightbackground="black", highlightthickness=1)
+        innerFrame.grid(row=0, column=0)
+
+        self.var_savePlayback = IntVar(value=1)
+        Checkbutton(innerFrame, variable=self.var_savePlayback, onvalue = 1, offvalue = 0).grid(row=0, column=1)
+        Label(innerFrame, text="Save Playback Configuration?").grid(row=0, column=0)
+
+        self.var_saveKeys = IntVar(value=1)
+        Checkbutton(innerFrame, variable=self.var_saveKeys, onvalue = 1, offvalue = 0).grid(row=1, column=1)
+        Label(innerFrame, text="Save Keypress Recording?").grid(row=1, column=0, sticky="W")
+
+        Button(baseFrame, text="Save Data", command=self._save, font=self.font_setting).grid(row=1, column=0)
+
+    def _save(self):
+        data = {}
+        
+        if self.var_savePlayback.get() == 1:
+            data["config"] = {}
+        if self.var_saveKeys.get() == 1:
+            data["keys"] = {}
+        
+        dataKeys = data.keys()
+
+        if len(dataKeys) == 0:
+            messagebox.showerror(title="Save Error", message="There was no selected data to save. Please try again.")
+            self.saveDialog.destroy()
+            return
+
+        if "config" in dataKeys:
+            data["config"]["delay"] = int(self.var_playbackDelay.get())
+            if self.var_playbackLoop.get() == 1:
+                data["config"]["loop"] = True
+            else:
+                data["config"]["loop"] = False
+            data["config"]["loop_limit"] = int(self.var_loopLimit.get())
+        
+        if "keys" in dataKeys:
+            data["keys"] = self.keys.outputKeys()
+        
+        file = asksaveasfile(filetypes=[("YAML Files", "*.yaml")], defaultextension=[("YAML Files", "*.yaml")])
+        if file is None:
+            return
+        
+        # DUMP YAML HERE
+        with open(file.name, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False)
+
+        file.close()
 
     # Core method to load recording and config
     def load(self):
@@ -271,7 +332,7 @@ class Main:
         if "config" in data:
             self._loadConfig(data["config"])
         if "keys" in data:
-            self.keys = Recording(self.listbox_recording, True, data["keys"])
+            self.keys = Recording(self.listbox_recording, {'loading':True, 'keys':data["keys"]})
 
     # Set the information depending on what is found
     def _loadConfig(self, config:dict):
