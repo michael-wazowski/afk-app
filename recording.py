@@ -135,7 +135,7 @@ class Recording:
             if curr.name == next.name and curr.event_type != next.event_type:
                 if round(next.time-curr.time, 5) <= 0.1:
                     keys.append({
-                        curr.name : {
+                        str(curr.name) : {
                         "type":"press",
                         "delta": round(curr.time-delta, 3)
                         }
@@ -144,7 +144,7 @@ class Recording:
                     kp += 1
                 else:
                     keys.append({
-                        curr.name : {
+                        str(curr.name) : {
                         "type": curr.event_type,
                         "delta": round(curr.time-delta, 3)
                         }
@@ -152,7 +152,7 @@ class Recording:
                     delta = curr.time
             else:
                 keys.append({
-                    curr.name : {
+                    str(curr.name) : {
                     "type": curr.event_type,
                     "delta": round(curr.time-delta, 3)
                     }

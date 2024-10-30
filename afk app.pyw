@@ -320,6 +320,7 @@ class Main:
             yaml.dump(data, f, default_flow_style=False)
 
         file.close()
+        self.saveDialog.destroy()
 
     # Core method to load recording and config
     def load(self):
